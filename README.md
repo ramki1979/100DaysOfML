@@ -67,7 +67,7 @@ We use scikit-learn library/framework for building our model.
     from sklearn.metrics import mean_absolute_error
 
     # Define our model, giving random_state a value ensures same results on each run.
-    ml_model = DecisionTreeRegressor(random_state=0)
+    ml_model = DecisionTreeRegressor(random_state=9)
 
     # fit model
     ml_model.fit(X, y)
@@ -101,5 +101,64 @@ so what we do, split our data into two parts *training* & *validation*
     val_predictions = ml_model.predict(ml_val_X)
 
     # print our model MAE
-    print(mean_absolute_error(val_y, val_predictions))
+    ml_mae = mean_absolute_error(val_y, val_predictions)
+
+    print(ml_mae)
 ```
+
+##### Evening :
+    
+Continuing the [kaggle](https://www.kaggle.com/learn/machine-learning) course
+
+**Summary** :
+
+overFitting is when a model matches the training data almost perfectly, but very poorly on new data.
+
+underFitting is when a model fails to capture important distinctions & patterns in the data and does poorly on training data (implies will do poorly on new data too).
+
+Finding the sweet spot between the two, give us the needed accuracy on new data, i.e finding the best tree size for the data.
+
+using *max_leaf_nodes* of **DecisionTreeRegressor** we can get the best tree size.
+
+```python
+# by invoking this function with different max_leaf_nodes will give us best mae for the model
+def get_mae(max_leaf_nodes, train_X, val_X, train_y, val_y):
+    model = DecisionTreeRegressor(max_leaf_nodes=max_leaf_nodes, random_state=9)
+    model.fit(train_X, train_y)
+    preds_val = model.predict(val_X)
+    mae = mean_absolute_error(val_y, preds_val)
+    return(mae)
+```
+
+Once we find the value for *max_leaf_nodes* we will re-write the model
+```python
+    # Fit the model with best tree size. Fill in argument to make optimal size
+    ml_final_model = DecisionTreeRegressor(max_leaf_nodes=max_leaf_nodes, random_state=9)
+
+    # Fit model with all of our data as we now know the best tree size for our data.
+    ml_final_model.fit(X, y)
+```
+
+Till now we are using **Decision Tree models** which are not good by todays ML standards.
+Now we will look at **Random Forests** which are based on *Decision Trees* but will give much better results.
+
+Random Forest uses many trees and makes prediction by averaging the prediction of each tree.
+```python
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+
+ml_model = RandomForestRegressor(random_state=9)
+
+ml_model.fit(train_X, train_y)
+ml_model_predictions = ml_model.predict(val_X)
+ml_model_mae = mean_absolute_error(ml_model_predictions, val_y)
+```
+**for sample iowa data, results for both DT & RF**
+Validation DT, MAE when not specifying max_leaf_nodes   : **29,653**
+Validation DT, MAE for best value of max_leaf_nodes     : **26,763**
+Validation RF, MAE                                      : **22,762**
+
+By default *RandomForest* gives better results then *DT*, modifying the parameters doesn't improve the results much.
+
+There are other models that gives better accuracy than *RandomForest* but requires good skill to get the parameters right.
+
