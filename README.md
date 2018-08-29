@@ -239,3 +239,276 @@ output.to_csv('submission.csv', index=False)
 
 I submitted the above model to the kaggle competition and Ranked **56**
 
+##### Evening :
+    
+Continuing the [kaggle](https://www.kaggle.com/learn/machine-learning) course
+
+**Summary** : 
+
+Handling Missing Value in Dataset can be handle in 3 ways
+
+```python
+# drop columns with missing values
+cols_with_missing = [col for col in original_data.columns 
+                                 if original_data[col].isnull().any()]
+redued_original_data = original_data.drop(cols_with_missing, axis=1)
+reduced_test_data = test_data.drop(cols_with_missing, axis=1)
+
+# Imputation fills missing values with some number, this is better than dropping the column
+from sklearn.impute import SimpleImputer
+my_imputer = SimpleImputer()
+data_with_imputed_values = my_imputer.fit_transform(original_data)
+
+# Extension to Imputation, I used in the above submitted model. 
+# this will help in some cases & fails in other cases
+```
+
+Using categorical data with One Hot Encoding.
+Till now we only considered number columns for prediction, we don't know how to use string type, now we will handle exactly that.
+
+Categorical data means, the column represent a category ex: car brands, colors etc.
+
+One Hot Encoding creates indvidual (binary) columns for each value/item of the category and indicates it presence in the row with 1 and absence with 0.
+
+```python
+from sklearn.model_selection import cross_val_score
+from sklearn.ensemble import RandomForestRegressor
+
+def get_mae(X, y):
+    # multiple by -1 to make positive MAE score instead of neg value returned as sklearn convention
+    return -1 * cross_val_score(RandomForestRegressor(50), 
+                                X, y, 
+                                scoring = 'neg_mean_absolute_error').mean()
+
+one_hot_encoded_training_predictors = pd.get_dummies(train_predictors)
+
+predictors_without_categoricals = train_predictors.select_dtypes(exclude=['object'])
+
+mae_without_categoricals = get_mae(predictors_without_categoricals, target)
+
+mae_one_hot_encoded = get_mae(one_hot_encoded_training_predictors, target)
+
+print('Mean Absolute Error when Dropping Categoricals: ' + str(int(mae_without_categoricals)))
+print('Mean Abslute Error with One-Hot Encoding: ' + str(int(mae_one_hot_encoded)))
+
+# Applying to Multiple Files, like train dataset file & test dataset file
+# Ensure the test data is encoded in the same manner as the training data with the align command
+one_hot_encoded_training_predictors = pd.get_dummies(train_predictors)
+one_hot_encoded_test_predictors = pd.get_dummies(test_predictors)
+final_train, final_test = one_hot_encoded_training_predictors.align(one_hot_encoded_test_predictors,
+                                                                    join='left', 
+                                                                    axis=1)
+```
+
+The world is filled with categorical data. You will be a much more effective data scientist if you know how to use this data. Here are resources that will be useful as you start doing more sophisticated work with cateogircal data.
+
+**Pipelines**: Deploying models into production ready systems is a topic unto itself. While one-hot encoding is still a great approach, your code will need to built in an especially robust way. Scikit-learn pipelines are a great tool for this. Scikit-learn offers a class for one-hot encoding and this can be added to a Pipeline. Unfortunately, it doesn't handle text or object values, which is a common use case.
+
+**Applications To Text for Deep Learning**: Keras and TensorFlow have fuctionality for one-hot encoding, which is useful for working with text.
+
+**Categoricals with Many Values**: Scikit-learn's FeatureHasher uses the hashing trick to store high-dimensional data. This will add some complexity to your modeling code.
+
+**XGBoost**:
+ 
+XGBoost is the leading model for working with standard tabular data.
+XGBoost is a *Gradient Boosted Decision Tree* that looks like below:
+
+![XGBoost algorithm diagram](https://i.imgur.com/e7MIgXk.png)
+
+```python
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import Imputer
+
+data = pd.read_csv('../input/train.csv')
+data.dropna(axis=0, subset=['SalePrice'], inplace=True)
+y = data.SalePrice
+X = data.drop(['SalePrice'], axis=1).select_dtypes(exclude=['object'])
+train_X, test_X, train_y, test_y = train_test_split(X.as_matrix(), y.as_matrix(), test_size=0.25)
+
+my_imputer = Imputer()
+train_X = my_imputer.fit_transform(train_X)
+test_X = my_imputer.transform(test_X)
+
+from xgboost import XGBRegressor
+
+my_model = XGBRegressor()
+# Add silent=True to avoid printing out updates with each cycle
+my_model.fit(train_X, train_y, verbose=False)
+
+# make predictions
+predictions = my_model.predict(test_X)
+
+from sklearn.metrics import mean_absolute_error
+print("Mean Absolute Error : " + str(mean_absolute_error(predictions, test_y)))
+
+# using n_estimators & early_stopping_rounds
+my_model = XGBRegressor(n_estimators=1000)
+my_model.fit(train_X, train_y, early_stopping_rounds=5, 
+             eval_set=[(test_X, test_y)], verbose=False)
+
+# using n_estimators, learning_rate & early_stopping_rounds
+my_model = XGBRegressor(n_estimators=1000, learning_rate=0.05)
+my_model.fit(train_X, train_y, early_stopping_rounds=5, 
+             eval_set=[(test_X, test_y)], verbose=False)
+
+```
+*XGBoost* has few parameters that can greately effect the model accuracy & training speed.
+
+*n_estimators*: specifies number of times to go through the circle describe above
+*early_stopping_rounds*: it causes the iterator/cycling to stop when the validation score stops improving.
+
+It's is smart to give large *n_estimators* value and then use *early_stopping_rounds* to find the optimal model accuracy.
+
+5 is a reasonable value for *early_stopping_rounds*
+
+When using *early_stopping_rounds*, you need to set aside some of your data for checking the number of rounds to use. If you later want to fit a model with all of your data, set *n_estimators* to whatever value you found to be optimal when run with early stopping.
+
+*learning_rate*
+Instead of getting predictions by simply adding up the predictions from each component model, we will multiply the predictions from each model by a small number before adding them in. This means each tree we add to the ensemble helps us less. In practice, this reduces the model's propensity to overfit.
+
+So, you can use a higher value of *n_estimators* without overfitting. If you use early stopping, the appropriate number of trees will be set automatically.
+
+In general, a small *learning_rate* (and large number of estimators) will yield more accurate XGBoost models, though it will also take the model longer to train since it does more iterations through the cycle.
+
+*n_jobs*
+On larger datasets where runtime is a consideration, you can use parallelism to build your models faster. It's common to set the parameter *n_jobs* equal to the number of cores on your machine. On smaller datasets, this won't help.
+
+**Partial Dependence Plots**
+
+```python
+from sklearn.ensemble.partial_dependence import partial_dependence, plot_partial_dependence
+
+# get_some_data is defined in hidden cell above.
+X, y = get_some_data()
+# scikit-learn originally implemented partial dependence plots only for Gradient Boosting models
+# this was due to an implementation detail, and a future release will support all model types.
+my_model = GradientBoostingRegressor()
+# fit the model as usual
+my_model.fit(X, y)
+# Here we make the plot
+my_plots = plot_partial_dependence(my_model,       
+                                   features=[0, 2], # column numbers of plots we want to show
+                                   X=X,            # raw predictors data.
+                                   feature_names=['Distance', 'Landsize', 'BuildingArea'], # labels on graphs
+                                   grid_resolution=10) # number of values to plot on x axis
+
+```
+
+
+**Pipelines**:
+
+pipelines are used for CleanerCode, Fewer Bugs, Easier to Deploy, More options for testing Models.
+
+```python
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Imputer
+
+# Read Data
+data = pd.read_csv('../input/melb_data.csv')
+cols_to_use = ['Rooms', 'Distance', 'Landsize', 'BuildingArea', 'YearBuilt']
+X = data[cols_to_use]
+y = data.Price
+train_X, test_X, train_y, test_y = train_test_split(X, y)
+
+my_pipeline = make_pipeline(Imputer(), RandomForestRegressor())
+
+my_pipeline.fit(train_X, train_y)
+predictions = my_pipeline.predict(test_X)
+
+```
+Transformers are for pre-processing before modeling. The Imputer class (for filling in missing values) is an example of a transformer. Over time, you will learn many more transformers, and you will frequently use multiple transformers sequentially.
+
+Models are used to make predictions. You will usually preprocess your data (with transformers) before putting it in a model.
+
+You can tell if an object is a transformer or a model by how you apply it. After fitting a transformer, you apply it with the transform command. After fitting a model, you apply it with the predict command. Your pipeline must start with transformer steps and end with a model. This is what you'd want anyway.
+
+
+**Cross Validation**:
+
+In cross-validation, we run our modeling process on different subsets of the data to get multiple measures of model quality.
+
+For example, we could have 5 folds or experiments. 
+We divide the data into 5 pieces, each being 20% of the full dataset.
+
+⟵––––––––––––––––––––––––––––Total DataSet––––––––––––––––⟶
+
+Experiment 1 ■■■■■■■■■ □□□□□□□□□ □□□□□□□□□ □□□□□□□□□ □□□□□□□□□
+
+Experiment 2 □□□□□□□□□ ■■■■■■■■■ □□□□□□□□□ □□□□□□□□□ □□□□□□□□□
+
+Experiment 3 □□□□□□□□□ □□□□□□□□□ ■■■■■■■■■ □□□□□□□□□ □□□□□□□□□
+
+Experiment 4 □□□□□□□□□ □□□□□□□□□ □□□□□□□□□ ■■■■■■■■■ □□□□□□□□□
+
+Experiment 5 □□□□□□□□□ □□□□□□□□□ □□□□□□□□□ □□□□□□□□□ ■■■■■■■■■ 
+
+□□□□□□□□□ Training
+
+■■■■■■■■■ Validation
+
+*Trade-offs Between Cross-Validation and Train-Test Split*:
+
+For small data set Cross-Validation is necessary, for large data set Train-Test-Split is sufficient.
+
+There's no simple threshold for what constitutes a large vs small dataset. 
+If your model takes a couple minute or less to run, it's probably worth switching to cross-validation. 
+If your model takes much longer to run, cross-validation may slow down your workflow more than it's worth.
+
+Alternatively, you can run cross-validation and see if the scores for each experiment seem close. 
+If each experiment gives the same results, train-test split is probably sufficient.
+
+```python
+
+import pandas as pd
+data = pd.read_csv('../input/melb_data.csv')
+cols_to_use = ['Rooms', 'Distance', 'Landsize', 'BuildingArea', 'YearBuilt']
+X = data[cols_to_use]
+y = data.Price
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Imputer
+my_pipeline = make_pipeline(Imputer(), RandomForestRegressor())
+
+from sklearn.model_selection import cross_val_score
+scores = cross_val_score(my_pipeline, X, y, scoring='neg_mean_absolute_error')
+print(scores)
+
+#You may notice that we specified an argument for scoring. 
+#This specifies what measure of model quality to report. 
+#The docs for scikit-learn show a list of options.
+
+#It is a little surprising that we specify negative mean absolute error in this case. 
+#Scikit-learn has a convention where all metrics are defined so a high number is better. 
+#Using negatives here allows them to be consistent with that convention, though negative MAE is almost unheard of elsewhere.
+
+#You typically want a single measure of model quality to compare between models. 
+#So we take the average across experiments.
+
+print('Mean Absolute Error %2f' %(-1 * scores.mean()))
+
+```
+*Exercise*:
+Convert the code for your on-going project over from train-test split to cross-validation. 
+Make sure to remove all code that divides your dataset into training and testing datasets. 
+Leaving code you don't need any more would be sloppy.
+
+Add or remove a predictor from your models. 
+See the cross-validation score using both sets of predictors, and see how you can compare the scores.
+
+**Data Lekage**:
+There are two main types of leakage: *Leaky Predictors* and a *Leaky Validation Strategies*
+
+To prevent this type of data leakage, any variable updated (or created) after the target value is realized should be excluded. 
+Because when we use this model to make new predictions, that data won't be available to the model.
+
+Data leakage can be multi-million dollar mistake in many data science applications. 
+Careful separation of training and validation data is a first step, and pipelines can help implement this separation. 
+Leaking predictors are a more frequent issue, and leaking predictors are harder to track down. 
+A combination of caution, common sense and data exploration can help identify leaking predictors so you remove them from your model.
