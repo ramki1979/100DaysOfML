@@ -153,12 +153,89 @@ ml_model.fit(train_X, train_y)
 ml_model_predictions = ml_model.predict(val_X)
 ml_model_mae = mean_absolute_error(ml_model_predictions, val_y)
 ```
-**for sample iowa data, results for both DT & RF**
+**for sample iowa data, results for both DT & RF**:
+
 Validation DT, MAE when not specifying max_leaf_nodes   : **29,653**
+
 Validation DT, MAE for best value of max_leaf_nodes     : **26,763**
+
 Validation RF, MAE                                      : **22,762**
 
 By default *RandomForest* gives better results then *DT*, modifying the parameters doesn't improve the results much.
 
 There are other models that gives better accuracy than *RandomForest* but requires good skill to get the parameters right.
+
+With this I completed Level 1 of the course.
+
+## Day 3 : August 29 , 2018
+
+**Today's Progress** : 
+##### Morning :
+continuing Machine Learning Course on [kaggle](https://www.kaggle.com/learn/machine-learning)
+
+**Summary** : 
+
+Started Level 2. Learned how to handle missing values.
+
+created a modified model of default iowa_data for Level 1 & submitted to kaggle competition.
+
+```python
+import pandas as pd
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
+from sklearn.impute import SimpleImputer # handling missing data
+
+# Path of the file to read. We changed the directory structure to simplify submitting to a competition
+iowa_file_path = '../input/train.csv'
+home_data = pd.read_csv(iowa_file_path)
+
+# path to file you will use for predictions
+test_data_path = '../input/test.csv'
+
+# read test data file using pandas
+test_data = pd.read_csv(test_data_path)
+
+# The list of columns is stored in a variable called features
+features = ['LotArea', 'OverallQual', 'YearBuilt', 'YearRemodAdd', '1stFlrSF', '2ndFlrSF', 'TotRmsAbvGrd', 'GarageArea', 'EnclosedPorch', 'YrSold']
+
+# Create target object and call it y
+y = home_data.SalePrice
+# Create features, call it X
+X = home_data[features]
+
+# create X_test which comes from test_data but includes only the columns you used for prediction.
+X_test = test_data[features]
+
+# copy train & test features for handling missing data
+imputed_X_train = X.copy()
+imputed_X_test = X_test.copy()
+
+cols_with_missing = (col for col in X.columns 
+                                 if X[col].isnull().any())
+for col in cols_with_missing:
+    imputed_X_train[col + '_was_missing'] = imputed_X_train[col].isnull()
+    imputed_X_test[col + '_was_missing'] = imputed_X_test[col].isnull()
+
+# Imputation
+my_imputer = SimpleImputer()
+imputed_X_train = my_imputer.fit_transform(imputed_X_train)
+imputed_X_test = my_imputer.transform(imputed_X_test)
+
+# create a new Random Forest model which we train on all training data
+rf_model = RandomForestRegressor()
+
+# fit rf_model on all data from the 
+rf_model.fit(imputed_X_train, y)
+
+# make predictions which we will submit. 
+test_preds = rf_model.predict(imputed_X_test)
+
+# The lines below shows you how to save your data in the format needed to score it in the competition
+output = pd.DataFrame({'Id': test_data.Id,
+                       'SalePrice': test_preds})
+
+output.to_csv('submission.csv', index=False)
+```
+
+I submitted the above model to the kaggle competition and Ranked **56**
 
