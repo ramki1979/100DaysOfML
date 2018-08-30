@@ -512,3 +512,20 @@ Data leakage can be multi-million dollar mistake in many data science applicatio
 Careful separation of training and validation data is a first step, and pipelines can help implement this separation. 
 Leaking predictors are a more frequent issue, and leaking predictors are harder to track down. 
 A combination of caution, common sense and data exploration can help identify leaking predictors so you remove them from your model.
+
+## Day 4 : August 30 , 2018
+
+##### Morning :
+
+Started Machine Learning Course on Udemy [Machine Learning A-Z™: Hands-On Python & R In Data Science](https://www.udemy.com/machinelearning/)
+
+Completed Section 1, Introduction.
+
+In midway of Section 2, Date Pre Processing.
+
+Doing both, python & R programming.
+
+
+**Summary** : 
+
+It just a refresh of what I learned from **kaggle**, but at the same time a little more knowledge.
