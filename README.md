@@ -529,3 +529,19 @@ Doing both, python & R programming.
 **Summary** : 
 
 It just a refresh of what I learned from **kaggle**, but at the same time a little more knowledge.
+
+##### Evening :
+
+Continuing, Machine Learning Course on Udemy
+
+Completed Section 2, i.e Data Pre Processing.
+
+**Summary** : 
+
+Getting DataSet [ kaggle √ ]
+Reading DataSet [ kaggle √ ]
+Missing Data [ kaggle √ ]
+Categorical Data Encoding [ kaggle √ ]
+Splitting DataSet for Training and Testing [ kaggle √ ]
+and finally Feature Scaling [ This is not covered in kaggle ]
+
