@@ -545,3 +545,12 @@ Categorical Data Encoding [ kaggle √ ]
 Splitting DataSet for Training and Testing [ kaggle √ ]
 and finally Feature Scaling [ This is not covered in kaggle ]
 
+## Day 4 : August 30 , 2018
+
+##### Morning :
+
+Started Machine Learning Course on Udemy [Machine Learning A-Z™: Hands-On Python & R In Data Science](https://www.udemy.com/machinelearning/)
+
+learned linear regression & created linera regression model in python.
+
+
